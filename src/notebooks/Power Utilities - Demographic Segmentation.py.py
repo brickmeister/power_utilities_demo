@@ -7,7 +7,7 @@
 # MAGIC %md
 # MAGIC 
 # MAGIC ## Abstract
-# MAGIC   The COVID-19 pandemic has been an ongoing global health crisis that has threatened many nations. In order to combat the pandemic, numerous approaches such as social distancing, contact tracing, and ventilation equipment have been used to track the spread. The large amount of data and ongoing crisis also suggest that there currently isn't an unanimous treatment for the global demographic. Hence, we developed a segmentation model to better categorize COVID-19 cases into nine distinct topics as well as determined the features associated with each of these topics. We believe the demographic segmentation will help first responders and epidemiologists in better targeting COVID-19 treatment and messaging.
+# MAGIC   Power utilities are heavily reliant on sensor data that resemble the internet of things (IOT). Due to increasing power demands globally, forecasting sensor failure can greatly reduce power disruptions and revenue loss. We showcase an auto-segmentation model that classifies sensor data in real-time utilizing Databricks and the SparkML platform. We believe the demographic segmentation will help power utilities monitors better power stability to customers.
 
 # COMMAND ----------
 
@@ -15,26 +15,8 @@
 # MAGIC 
 # MAGIC ## Dataset
 # MAGIC 
-# MAGIC =========================================
-# MAGIC Combined Cycle Power Plant Data Set
-# MAGIC =========================================
-# MAGIC Power Plant Sensor Readings Data Set
-# MAGIC 
-# MAGIC ### Source
-# MAGIC http://archive.ics.uci.edu/ml/datasets/Combined+Cycle+Power+Plant
-# MAGIC 
-# MAGIC ### Summary
-# MAGIC 
 # MAGIC The example data is provided by UCI at UCI Machine Learning Repository Combined Cycle Power Plant Data Set
-# MAGIC You can read the background on the UCI page, but in summary we have collected a number of readings from sensors at a Gas Fired Power Plant (also called a Peaker Plant) and now we want to use those sensor readings to predict how much power the plant will generate.
-# MAGIC 
-# MAGIC ### Usage License
-# MAGIC 
-# MAGIC If you publish material based on databases obtained from this repository, then, in your acknowledgements, please note the assistance you received by using this repository. This will help others to obtain the same data sets and replicate your experiments. We suggest the following reference format for referring to this repository:
-# MAGIC Pınar Tüfekci, Prediction of full load electrical power output of a base load operated combined cycle power plant using machine learning methods, International Journal of Electrical Power & Energy Systems, Volume 60, September 2014, Pages 126-140, ISSN 0142-0615, [Link](http://www.sciencedirect.com/science/article/pii/S0142061514000908)
-# MAGIC 
-# MAGIC 
-# MAGIC Heysem Kaya, Pınar Tüfekci , Sadık Fikret Gürgen: Local and Global Learning Methods for Predicting Power of a Combined Gas & Steam Turbine, Proceedings of the International Conference on Emerging Trends in Computer and Electronics Engineering ICETCEE 2012, pp. 13-18 (Mar. 2012, Dubai)
+# MAGIC * Source : http://archive.ics.uci.edu/ml/datasets/Combined+Cycle+Power+Plant
 
 # COMMAND ----------
 
@@ -89,12 +71,7 @@
 # MAGIC %md
 # MAGIC 
 # MAGIC ## Conclusion/Results
-# MAGIC Six categories were derived from the unsupervised clustering which were classified according to a decision tree. Average accuracy for the decision tree model was 97% [CMD 77], and the average precision was 94% [CMD 79].
-# MAGIC 
-# MAGIC Among the features that strongly divided groups, the top features
-# MAGIC were unsurprisingly # of patients recovered, # of active cases. The surprising factor was that the longitude of a record was also a strong separator into categories. This suggests that COVID-19 may have more stratification across timezones than seasons (heat doesn't strongly affect the virus).
-# MAGIC 
-# MAGIC Obviously due to the preliminary nature of this analysis, any conclusions drawn from this analysis should be further verified.
+# MAGIC   Auto segmentation of streaming sensor data suggested there were 5 distinct categories of power plant running statuses. Further classification of these statuses would allow better targeted post mortem analyses as well as on-line training for power utilities monitors.
 
 # COMMAND ----------
 
@@ -107,6 +84,10 @@
 
 # MAGIC %md
 # MAGIC # Setup Dataset
+
+# COMMAND ----------
+
+# MAGIC %pip install mlflow
 
 # COMMAND ----------
 
@@ -382,10 +363,6 @@
 # MAGIC # Model Training
 # MAGIC 
 # MAGIC For the purposes of this experiment, we will use MLFLOW to persist results and save models
-
-# COMMAND ----------
-
-# MAGIC %pip install mlflow
 
 # COMMAND ----------
 
@@ -687,7 +664,7 @@ def dtcTrain(p_max_depth : int,
 # MAGIC %python
 # MAGIC 
 # MAGIC """
-# MAGIC   Show the efffect of increasing the max depth
+# MAGIC   Show the effect of increasing the max depth
 # MAGIC   for a Decision Tree
 # MAGIC """
 # MAGIC 
@@ -945,30 +922,3 @@ Read JSON Data as a Pandas dataframe
 """
 
 pd.read_json(json_records, orient = 'split')
-
-# COMMAND ----------
-
-# DBTITLE 1,Access Deployed Model using Python API
-# MAGIC %python
-# MAGIC 
-# MAGIC import os
-# MAGIC import requests
-# MAGIC import pandas as pd
-# MAGIC 
-# MAGIC """
-# MAGIC Example scoring model from MLFlow UI
-# MAGIC Need to specify bearer token to connect to current MLFlow deployment
-# MAGIC """
-# MAGIC 
-# MAGIC # define the model scoring function
-# MAGIC def score_model(dataset: pd.DataFrame):
-# MAGIC   url = 'https://field-eng.cloud.databricks.com/model/power_utilities_segmenter/3/invocations'
-# MAGIC   headers = {'Authorization': f'Bearer {dbutils.secrets.get("ml-ml", "TOKEN")}'}
-# MAGIC   data_json = json_records
-# MAGIC   response = requests.request(method='POST', headers=headers, url=url, json=data_json)
-# MAGIC   if response.status_code != 200:
-# MAGIC     raise Exception(f'Request failed with status {response.status_code}, {response.text}')
-# MAGIC   return response.json()
-# MAGIC 
-# MAGIC # score the model
-# MAGIC score_model(df_dataset)
