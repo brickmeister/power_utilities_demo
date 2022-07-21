@@ -62,6 +62,20 @@
 
 # COMMAND ----------
 
+# MAGIC %python
+# MAGIC 
+# MAGIC import mlflow
+# MAGIC 
+# MAGIC """
+# MAGIC Setup MLFlow Experiment ID to allow usage in Job Batches
+# MAGIC """
+# MAGIC 
+# MAGIC current_notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+# MAGIC 
+# MAGIC mlflow.set_experiment(current_notebook_path+"_experiment")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### Training Function
 
@@ -276,7 +290,7 @@
 # MAGIC fs = FeatureStoreClient()
 # MAGIC 
 # MAGIC ## retrieve the database 
-# MAGIC database : str = dbutils.jobs.taskValues.get(taskKey    = "00-SETUP", \
+# MAGIC database : str = dbutils.jobs.taskValues.get(taskKey    = "00-Setup", \
 # MAGIC                                              key        = "database", \
 # MAGIC                                              default    = 'default', \
 # MAGIC                                              debugValue = 'default')

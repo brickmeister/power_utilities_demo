@@ -132,7 +132,7 @@
 # MAGIC fs = FeatureStoreClient()
 # MAGIC 
 # MAGIC ## retrieve the database 
-# MAGIC database : str = dbutils.jobs.taskValues.get(taskKey    = "00-SETUP", \
+# MAGIC database : str = dbutils.jobs.taskValues.get(taskKey    = "00-Setup", \
 # MAGIC                                              key        = "database", \
 # MAGIC                                              default    = 'default', \
 # MAGIC                                              debugValue = 'default')
