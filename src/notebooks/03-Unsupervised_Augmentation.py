@@ -70,9 +70,7 @@
 # MAGIC Setup MLFlow Experiment ID to allow usage in Job Batches
 # MAGIC """
 # MAGIC 
-# MAGIC current_notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
-# MAGIC 
-# MAGIC mlflow.set_experiment(current_notebook_path+"_experiment")
+# MAGIC mlflow.set_experiment("/Users/mark.lee@databricks.com/power_utilities_sensor_data")
 
 # COMMAND ----------
 
