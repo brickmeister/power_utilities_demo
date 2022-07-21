@@ -73,7 +73,7 @@
 # MAGIC Retrieve the model path
 # MAGIC """
 # MAGIC 
-# MAGIC logged_model = dbutils.jobs.taskValues.get(taskKey    = "04-Decision_Tree_training", \
+# MAGIC logged_model = dbutils.jobs.taskValues.get(taskKey    = "04-Decision_Tree_Training", \
 # MAGIC                                            key        = "best_dtc_model", \
 # MAGIC                                            default    = 'dbfs:/databricks/mlflow-tracking/d9058f27daac417b87b103f869afe14f/a664a4a837bf4b04a85f990af611d06b/artifacts/Decision_tree_4',
 # MAGIC                                            debugValue = 'dbfs:/databricks/mlflow-tracking/d9058f27daac417b87b103f869afe14f/a664a4a837bf4b04a85f990af611d06b/artifacts/Decision_tree_4')
