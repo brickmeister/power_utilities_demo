@@ -6,7 +6,105 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Training Function
+# MAGIC 
+# MAGIC # Setup
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ## Prepare Data
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC from databricks.feature_store import FeatureStoreClient
+# MAGIC from pyspark.sql import DataFrame
+# MAGIC 
+# MAGIC """
+# MAGIC Get data from the feature store
+# MAGIC """
+# MAGIC 
+# MAGIC ## initialize the feature store client
+# MAGIC fs = FeatureStoreClient()
+# MAGIC 
+# MAGIC ## get the feature table name from multi task workflow
+# MAGIC feature_table_name = dbutils.jobs.taskValues.get(taskKey    = "03-Unsupervised_Augmentation", \
+# MAGIC                                                  key        = "augmented_feature_table", \
+# MAGIC                                                  default    = 'default.augmented_feature_sensor_data', \
+# MAGIC                                                  debugValue = 'default.augmented_feature_sensor_data')
+# MAGIC df_sensors : DataFrame = fs.read_table(feature_table_name)
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC from pyspark.ml.feature import VectorAssembler
+# MAGIC from pyspark.sql.functions import col
+# MAGIC 
+# MAGIC """
+# MAGIC 
+# MAGIC   Setup the datasets that will be used for this training example
+# MAGIC 
+# MAGIC """
+# MAGIC 
+# MAGIC # Convert strings to floats
+# MAGIC 
+# MAGIC features = [x for x in df_sensors.columns if x.upper() not in ["UUID", "PROCESSED_TIME"]] ## use all features except metadata or those string indexed
+# MAGIC 
+# MAGIC assembler = VectorAssembler(inputCols = features,
+# MAGIC                             outputCol = "features")
+# MAGIC 
+# MAGIC sensor_features = assembler.transform(df_sensors)
+# MAGIC 
+# MAGIC display(sensor_features)
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC from pyspark.sql import DataFrame;
+# MAGIC 
+# MAGIC """
+# MAGIC   Separate the training and testing dataset into two dataframes
+# MAGIC """
+# MAGIC 
+# MAGIC trainingDF, testingDF = sensor_features.randomSplit([0.7, 0.3])
+# MAGIC trainingDF.createOrReplaceTempView("clustered_training_df")
+# MAGIC testingDF.createOrReplaceTempView("clustered_testing_df")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ### Visualize class imbalance
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC --
+# MAGIC -- Check for class imbalance
+# MAGIC --
+# MAGIC 
+# MAGIC SELECT "TRAINING" AS LABEL,
+# MAGIC        CLUSTER,
+# MAGIC        LOG(COUNT(*)) AS LOG_COUNT
+# MAGIC FROM clustered_training_df
+# MAGIC GROUP BY CLUSTER
+# MAGIC UNION ALL
+# MAGIC SELECT "TESTING" AS LABEL,
+# MAGIC        CLUSTER,
+# MAGIC        LOG(COUNT(*)) AS LOG_COUNT
+# MAGIC FROM clustered_testing_df
+# MAGIC GROUP BY CLUSTER
+# MAGIC ORDER BY CLUSTER ASC;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Training Function
 
 # COMMAND ----------
 
@@ -40,7 +138,7 @@ def dtcTrain(p_max_depth : int,
     
     # Start up the evaluator
     evaluator = MulticlassClassificationEvaluator()\
-                      .setLabelCol("cluster")\
+                      .setLabelCol("Cluster")\
                       .setPredictionCol("predictions")
 
     # Train a model
@@ -67,12 +165,12 @@ def dtcTrain(p_max_depth : int,
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Train the Decision Tree
+# MAGIC # Train the Decision Tree
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Hyperparameter tuning for Max Depth
+# MAGIC ## Hyperparameter tuning for Max Depth
 
 # COMMAND ----------
 
@@ -84,11 +182,11 @@ def dtcTrain(p_max_depth : int,
 # MAGIC """
 # MAGIC 
 # MAGIC dtcTuning = [(i, dtcTrain(p_max_depth = i,
-# MAGIC                           training_data = clusteredtrainingDF,
-# MAGIC                           test_data = clusteredTestingDF,
+# MAGIC                           training_data = trainingDF,
+# MAGIC                           test_data = testingDF,
 # MAGIC                           seed = 1,
 # MAGIC                           featuresCol = "features",
-# MAGIC                           labelCol = "cluster"))
+# MAGIC                           labelCol = "Cluster"))
 # MAGIC               for i in range(2, 15, 1)]
 # MAGIC 
 # MAGIC ## Return the results into a series of arrays
@@ -97,7 +195,7 @@ def dtcTrain(p_max_depth : int,
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Elbow Plot
+# MAGIC ## Elbow Plot
 
 # COMMAND ----------
 
@@ -117,3 +215,11 @@ def dtcTrain(p_max_depth : int,
 # MAGIC display(dtcF1DF)
 
 # COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC """
+# MAGIC Set the optimal model for the next workflow
+# MAGIC """
+# MAGIC 
+# MAGIC dbutils.jobs.taskValues.set("best_dtc_model", "dbfs:/databricks/mlflow-tracking/d9058f27daac417b87b103f869afe14f/a664a4a837bf4b04a85f990af611d06b/artifacts/Decision_tree_4")

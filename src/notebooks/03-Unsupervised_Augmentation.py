@@ -1,9 +1,64 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC 
+# MAGIC # This module show how to execute an unsupervised learning model
+
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC 
-# MAGIC ## K-Means Model Training
+# MAGIC # Data Setup
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC from databricks.feature_store import FeatureStoreClient
+# MAGIC from pyspark.sql import DataFrame
+# MAGIC 
+# MAGIC """
+# MAGIC Get data from the feature store
+# MAGIC """
+# MAGIC 
+# MAGIC ## initialize the feature store client
+# MAGIC fs = FeatureStoreClient()
+# MAGIC 
+# MAGIC ## get the feature table name from multi task workflow
+# MAGIC feature_table_name = dbutils.jobs.taskValues.get(taskKey    = "02-Setup_Features", \
+# MAGIC                                                  key        = "feature_table", \
+# MAGIC                                                  default    = 'default.feature_sensor_data', \
+# MAGIC                                                  debugValue = 'default.feature_sensor_data')
+# MAGIC df_sensors : DataFrame = fs.read_table(feature_table_name)
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC from pyspark.ml.feature import VectorAssembler
+# MAGIC from pyspark.sql.functions import col
+# MAGIC 
+# MAGIC """
+# MAGIC 
+# MAGIC   Setup the datasets that will be used for this training example
+# MAGIC 
+# MAGIC """
+# MAGIC 
+# MAGIC # Convert strings to floats
+# MAGIC 
+# MAGIC features = [x for x in df_sensors.columns if x.upper() not in ["UUID", "PROCESSED_TIME"]] ## use all features except metadata or those string indexed
+# MAGIC 
+# MAGIC assembler = VectorAssembler(inputCols = features,
+# MAGIC                             outputCol = "features")
+# MAGIC 
+# MAGIC sensor_features = assembler.transform(df_sensors)
+# MAGIC 
+# MAGIC display(sensor_features)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC # K-Means Model Training
 
 # COMMAND ----------
 
@@ -96,7 +151,7 @@
 # MAGIC """
 # MAGIC 
 # MAGIC ## Tune the K Means model by optimizing the number of centroids (hyperparameter tuning)
-# MAGIC kMeansTuning = [(i, kMeansTrain(nCentroids = i, dataset = dfDataset, featuresCol = "features", seed = 1)) for i in range(2 ,15, 1)]
+# MAGIC kMeansTuning = [(i, kMeansTrain(nCentroids = i, dataset = sensor_features, featuresCol = "features", seed = 1)) for i in range(2 ,15, 1)]
 # MAGIC 
 # MAGIC ## Return the results into a series of arrays
 # MAGIC kMeansCosts = [(a[0], a[1][1]) for a in kMeansTuning]
@@ -131,6 +186,19 @@
 
 # COMMAND ----------
 
+# DBTITLE 1,Setup Data Train, Test Split
+# MAGIC %python
+# MAGIC 
+# MAGIC from pyspark.sql import DataFrame;
+# MAGIC 
+# MAGIC """
+# MAGIC   Separate the training and testing dataset into two dataframes
+# MAGIC """
+# MAGIC 
+# MAGIC trainingDF, testingDF = sensor_features.randomSplit([0.7, 0.3])
+
+# COMMAND ----------
+
 # DBTITLE 1,Augment Data with Cluster Label
 # MAGIC %python
 # MAGIC 
@@ -157,7 +225,6 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Validation DataFrame Class Balance
 # MAGIC %sql
 # MAGIC 
 # MAGIC --
@@ -178,3 +245,65 @@
 # MAGIC ORDER BY CLUSTER ASC;
 
 # COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC # Write to Feature Store
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC """
+# MAGIC Write to feature store
+# MAGIC """
+# MAGIC 
+# MAGIC augmented_df : DataFrame = optimalClusterModel.transform(sensor_features)\
+# MAGIC                                               .drop("Features")\
+# MAGIC                                               .withColumnRenamed("predictions", "Cluster")
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC from databricks.feature_store import FeatureStoreClient
+# MAGIC 
+# MAGIC """
+# MAGIC   Write to feature store
+# MAGIC """
+# MAGIC 
+# MAGIC ## start up the feature store client
+# MAGIC fs = FeatureStoreClient()
+# MAGIC 
+# MAGIC ## retrieve the database 
+# MAGIC database : str = dbutils.jobs.taskValues.get(taskKey    = "00-SETUP", \
+# MAGIC                                              key        = "database", \
+# MAGIC                                              default    = 'default', \
+# MAGIC                                              debugValue = 'default')
+# MAGIC 
+# MAGIC ## set the feature table name
+# MAGIC feature_table : str = f"{database}.augmented_feature_sensor_data"
+# MAGIC 
+# MAGIC try:
+# MAGIC   # setup the feature store table
+# MAGIC   fs.create_table(
+# MAGIC     name=feature_table,
+# MAGIC     primary_keys='UUID',
+# MAGIC     schema=augmented_df.schema,
+# MAGIC     description='Augmented Sensor Data Features')
+# MAGIC except Exception as err:
+# MAGIC   ## if table is registered, just leave it
+# MAGIC   pass
+# MAGIC   
+# MAGIC try:
+# MAGIC   # write to feature store
+# MAGIC   fs.write_table(
+# MAGIC   name=feature_table,
+# MAGIC   df = augmented_df,
+# MAGIC   mode = 'overwrite')
+# MAGIC   
+# MAGIC   # set the feature store value for the multi-task workflow
+# MAGIC   dbutils.jobs.taskValues.set("augmented_feature_store", feature_table)
+# MAGIC   
+# MAGIC except Exception as err:
+# MAGIC   raise ValueError(f"Failed to write out to feature store, {err}")
