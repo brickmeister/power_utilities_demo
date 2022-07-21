@@ -1,3 +1,4 @@
+# Databricks notebook source
 # COMMAND ----------
 
 # DBTITLE 1,Retrieve Data from Delta Lake
