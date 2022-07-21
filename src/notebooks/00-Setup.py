@@ -21,3 +21,13 @@
 # MAGIC   dbutils.jobs.taskValues.set("database", database)
 # MAGIC except Exception as err:
 # MAGIC   raise ValueError(f"Couldn't set database, {err}")
+
+# COMMAND ----------
+
+# MAGIC %python
+# MAGIC 
+# MAGIC """
+# MAGIC Print some values
+# MAGIC """
+# MAGIC 
+# MAGIC print(database)
