@@ -30,7 +30,7 @@
 # MAGIC 
 # MAGIC ## get the feature table name from multi task workflow
 # MAGIC feature_table_name = dbutils.jobs.taskValues.get(taskKey    = "02-Setup_Features", \
-# MAGIC                                                  key        = "feature_table", \
+# MAGIC                                                  key        = "feature_store", \
 # MAGIC                                                  default    = 'default.feature_sensor_data', \
 # MAGIC                                                  debugValue = 'default.feature_sensor_data')
 # MAGIC df_sensors : DataFrame = fs.read_table(feature_table_name)
@@ -73,10 +73,12 @@
 # MAGIC Retrieve the model path
 # MAGIC """
 # MAGIC 
-# MAGIC logged_model = dbutils.jobs.taskValues.get(taskKey    = "04-Decision_Tree_Training", \
-# MAGIC                                            key        = "best_dtc_model", \
-# MAGIC                                            default    = 'dbfs:/databricks/mlflow-tracking/d9058f27daac417b87b103f869afe14f/a664a4a837bf4b04a85f990af611d06b/artifacts/Decision_tree_4',
-# MAGIC                                            debugValue = 'dbfs:/databricks/mlflow-tracking/d9058f27daac417b87b103f869afe14f/a664a4a837bf4b04a85f990af611d06b/artifacts/Decision_tree_4')
+# MAGIC # logged_model = dbutils.jobs.taskValues.get(taskKey    = "04-Decision_Tree_Training", \
+# MAGIC #                                            key        = "best_dtc_model", \
+# MAGIC #                                            default    = 'dbfs:/databricks/mlflow-tracking/720938047206209/de89a0dc270343018827fc6275f47678/artifacts/Decision_tree_4',
+# MAGIC #                                            debugValue = 'dbfs:/databricks/mlflow-tracking/720938047206209/de89a0dc270343018827fc6275f47678/artifacts/Decision_tree_4')
+# MAGIC 
+# MAGIC logged_model = 'dbfs:/databricks/mlflow-tracking/720938047206209/de89a0dc270343018827fc6275f47678/artifacts/Decision_tree_4'
 
 # COMMAND ----------
 
