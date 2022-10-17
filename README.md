@@ -3,7 +3,7 @@
 Determining points of failure for IOT devices is a common use case for power utilities. The following code reads streaming data from Kafka and utilizes unsupervised clustering for failure segmentation.
 
 # Table of Contents
-- [Power utilies Demo](#power-utilies-demo)
+- [Power Utilities Demo](#power-utilities-demo)
 - [Table of Contents](#table-of-contents)
 - [Architecture](#architecture)
 - [Dataset](#dataset)
