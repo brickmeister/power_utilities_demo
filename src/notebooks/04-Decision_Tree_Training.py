@@ -31,7 +31,7 @@
 # MAGIC 
 # MAGIC ## get the feature table name from multi task workflow
 # MAGIC feature_table_name = dbutils.jobs.taskValues.get(taskKey    = "03-Unsupervised_Augmentation", \
-# MAGIC                                                  key        = "augmented_feature_table", \
+# MAGIC                                                  key        = "augmented_feature_store", \
 # MAGIC                                                  default    = 'default.augmented_feature_sensor_data', \
 # MAGIC                                                  debugValue = 'default.augmented_feature_sensor_data')
 # MAGIC df_sensors : DataFrame = fs.read_table(feature_table_name)

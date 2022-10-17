@@ -25,7 +25,7 @@
 # MAGIC 
 # MAGIC ## get the feature table name from multi task workflow
 # MAGIC feature_table_name = dbutils.jobs.taskValues.get(taskKey    = "02-Setup_Features", \
-# MAGIC                                                  key        = "feature_table", \
+# MAGIC                                                  key        = "feature_store", \
 # MAGIC                                                  default    = 'default.feature_sensor_data', \
 # MAGIC                                                  debugValue = 'default.feature_sensor_data')
 # MAGIC df_sensors : DataFrame = fs.read_table(feature_table_name)
